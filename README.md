@@ -41,6 +41,14 @@ The platform follows a modern, cost-effective **"ELT + AI"** pattern:
 | **Connectivity** | ODBC Driver 18, pyodbc |
 
 ---
+## ⚖️ Disclaimer
+**Please Read Carefully:**
+
+* **"As-Is" Basis:** This repository is provided for educational and portfolio purposes only. The software is provided "as is," without warranty of any kind, express or implied.
+* **Cloud Costs:** Using this project involves third-party services (Azure Synapse, OpenAI GPT-4o). Users are solely responsible for any cloud consumption costs or API charges incurred.
+* **Data Security:** This is a Proof-of-Concept. Before using this architecture with sensitive enterprise data, ensure you have implemented proper OAuth, encryption, and network security protocols.
+* **GPL 3.0 Compliance:** In accordance with the GNU GPL v3.0, any derivative works or distributions of this code must also be made available under the same license.
+
 
 ## 🚀 Getting Started
 
@@ -49,3 +57,5 @@ Navigate to your dbt project and run the following to build the Semantic Layer:
 ```bash
 dbt run
 dbt test
+
+---
