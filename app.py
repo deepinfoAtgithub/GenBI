@@ -7,31 +7,26 @@ from langchain_openai import ChatOpenAI
 if not st.user.is_logged_in:
     st.set_page_config(page_title="GenBI Login", layout="centered")
     st.header("🔐 GenBI Enterprise Platform")
-    st.info("Authorized personnel only. Please authenticate via Google.")
-    # We call st.login without "google" if you only have one [auth] provider in secrets
+    st.info("Please authenticate with your Google account to access the Agentic Analytics layer.")
     if st.button("Log in with Google"):
         st.login() 
     st.stop()
 
-# 2. EMAIL WHITELIST
-AUTHORIZED_USERS = ["deepak.adlakha@gmail.com"]
-
-if st.user.email not in AUTHORIZED_USERS:
-    st.error(f"Access Denied for {st.user.email}.")
-    if st.button("Log out"):
-        st.logout()
-    st.stop()
-
-# 3. MAIN DASHBOARD CONFIG
+# 2. OPEN ACCESS LOGIC
+# We no longer check against a whitelist. 
+# If they reach this line, they are already authenticated by Google.
 st.set_page_config(page_title="GenBI Agentic Platform", layout="wide")
-st.sidebar.write(f"Logged in: **{st.user.name}**")
+
+# 3. SIDEBAR & LOGOUT
+st.sidebar.write(f"👤 User: **{st.user.name}**")
+st.sidebar.write(f"📧 {st.user.email}")
 if st.sidebar.button("Logout"):
     st.logout()
 
 st.title("🤖 Agentic GenBI Enterprise Platform")
 st.markdown("---")
 
-# 4. DATABASE & SECRETS
+# 4. DATABASE & SECRETS (Existing Logic)
 DB_USER = st.secrets["DB_USER"]
 DB_PASS = st.secrets["DB_PASS"]
 OPENAI_KEY = st.secrets["OPENAI_API_KEY"]
@@ -50,7 +45,7 @@ def fetch_data():
     with pyodbc.connect(conn_str) as conn:
         return pd.read_sql(query, conn)
 
-# 5. UI LOGIC
+# 5. UI LOGIC (Existing Logic)
 try:
     df = fetch_data()
     df['Margin %'] = (df['Profit'] / df['Revenue'].replace(0, 1)) * 100
@@ -59,7 +54,7 @@ try:
     with col1:
         st.subheader("📊 Category Performance")
         st.bar_chart(df, x="category_name", y="Margin %")
-        st.dataframe(df.style.format({'Revenue': '${:,.2f}', 'Profit': '${:,.2f}', 'Margin %': '{:.2f}%'}))
+        st.dataframe(df.style.format({'Revenue': '${:,.2f}', 'Profit': '${:,.2f}', 'Margin %': '{:.2f}%'}), use_container_width=True)
 
     with col2:
         st.subheader("🧠 Agent Insights")
