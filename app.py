@@ -17,7 +17,7 @@ OPENAI_KEY = st.secrets["OPENAI_API_KEY"]
 
 # 3. Connection String
 conn_str = (
-    f"Driver={{ODBC Driver 18 for SQL Server}};"
+    f"Driver={{ODBC Driver 17 for SQL Server}};"
     f"Server=tcp:genbiretailserver.database.windows.net,1433;"
     f"Database=RetailServices;"
     f"Uid={DB_USER};Pwd={DB_PASS};"
