@@ -2,9 +2,11 @@ import streamlit as st
 import pandas as pd
 import pyodbc
 from langchain_openai import ChatOpenAI
+from datetime import datetime
 
 # 1. AUTHENTICATION & SECURITY (Must be at the top)
-if not st.experimental_user.is_logged_in:
+# Note: st.user is the new standard in Streamlit 1.35+
+if not st.user.is_logged_in:
     st.set_page_config(page_title="GenBI Analytics Login", layout="centered")
     st.header("🔐 GenBI Enterprise Platform")
     st.info("Access to this Agentic Analytics layer is restricted. Please log in to continue.")
@@ -13,11 +15,11 @@ if not st.experimental_user.is_logged_in:
     st.stop()
 
 # 2. EMAIL WHITELIST (Replace with your email)
-AUTHORIZED_USERS = ["deepak.adlakha@gmail.com"] # Add your email here!
+AUTHORIZED_USERS = ["deepak.adlakha@gmail.com"] 
 
-if st.experimental_user.email not in AUTHORIZED_USERS:
+if st.user.email not in AUTHORIZED_USERS:
     st.set_page_config(page_title="Access Denied")
-    st.error(f"Access Denied for {st.experimental_user.email}. This attempt has been logged.")
+    st.error(f"Access Denied for {st.user.email}. This attempt has been logged.")
     if st.button("Log out"):
         st.logout()
     st.stop()
@@ -25,7 +27,7 @@ if st.experimental_user.email not in AUTHORIZED_USERS:
 # 3. MAIN APP CONFIGURATION
 st.set_page_config(page_title="GenBI Agentic Platform", layout="wide")
 st.sidebar.image("https://cdn-icons-png.flaticon.com/512/2103/2103633.png", width=100)
-st.sidebar.write(f"👋 Welcome, **{st.experimental_user.name}**")
+st.sidebar.write(f"👋 Welcome, **{st.user.name}**")
 if st.sidebar.button("Logout"):
     st.logout()
 
@@ -37,7 +39,6 @@ DB_USER = st.secrets["DB_USER"]
 DB_PASS = st.secrets["DB_PASS"]
 OPENAI_KEY = st.secrets["OPENAI_API_KEY"]
 
-# Note: We use Driver 17 for Streamlit Community Cloud compatibility
 conn_str = (
     f"Driver={{ODBC Driver 17 for SQL Server}};"
     f"Server=tcp:genbiretailserver.database.windows.net,1433;"
@@ -60,7 +61,6 @@ run_audit = st.sidebar.button("Run Autonomous Audit")
 # 6. DASHBOARD RENDERING
 try:
     df = fetch_data()
-    # Prevent division by zero
     df['Margin %'] = (df['Profit'] / df['Revenue'].replace(0, 1)) * 100
 
     col1, col2 = st.columns([2, 1])
@@ -73,6 +73,9 @@ try:
     with col2:
         st.subheader("🧠 Agent Insights")
         if run_audit:
+            # Audit Log for your records (visible in Streamlit logs)
+            print(f"[AUDIT] {st.user.email} ran an Autonomous Audit at {datetime.now()}")
+            
             with st.spinner("Agent is reasoning over the semantic layer..."):
                 anomalies = df[df['Margin %'] < margin_threshold]
                 if not anomalies.empty:
@@ -86,3 +89,4 @@ try:
                     st.success("✅ All categories are performing within threshold.")
 except Exception as e:
     st.error(f"Critical error connecting to the Data Warehouse: {e}")
+    
