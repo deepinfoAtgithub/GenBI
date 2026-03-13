@@ -40,7 +40,7 @@ OPENAI_KEY = os.environ.get('OPENAI_API_KEY')
 llm = ChatOpenAI(model="gpt-4o", openai_api_key=OPENAI_KEY, temperature=0.1)
 
 conn_str = (
-    "Driver={ODBC Driver 18 for SQL Server};"
+    "Driver={ODBC Driver 17 for SQL Server};"
     "Server=tcp:genbiretailserver.database.windows.net,1433;"
     "Database=RetailServices;"
     f"Uid={DB_USER};Pwd={DB_PASS};"
