@@ -127,7 +127,7 @@ try:
         st.bar_chart(df_sales, x="category_name", y="Margin %")
         st.dataframe(df_sales.style.format({'Revenue': '${:,.2f}', 'Profit': '${:,.2f}', 'Margin %': '{:.2f}%'}))
 
-      with col2:
+    with col2:
         st.subheader("🧠 Multi-Agent Orchestration")
         st.info("Deploys parallel AI agents to audit Finance and Supply Chain data simultaneously.")
         
