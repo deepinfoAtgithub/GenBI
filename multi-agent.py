@@ -40,7 +40,7 @@ OPENAI_KEY = os.environ.get('OPENAI_API_KEY')
 llm = ChatOpenAI(model="gpt-4o", openai_api_key=OPENAI_KEY, temperature=0.1)
 
 conn_str = (
-    "Driver={ODBC Driver 17 for SQL Server};"
+    "Driver={ODBC Driver 18 for SQL Server};"
     "Server=tcp:genbiretailserver.database.windows.net,1433;"
     "Database=RetailServices;"
     f"Uid={DB_USER};Pwd={DB_PASS};"
@@ -117,44 +117,62 @@ multi_agent_app = workflow.compile()
 
 
 # --- 6. UI DASHBOARD RENDERING ---
+
+# Helper function to run the agent graph and update the UI
+def run_agentic_audit(target_category, mode_name):
+    with st.status(f"Initializing {mode_name} for '{target_category}'...", expanded=True) as status:
+        st.write("🕵️‍♂️ **Agent A (Finance):** Scanning margins and formulating alert...")
+        st.write(f"📦 **Agent B (Logistics):** Querying vendor & freight data for {target_category}...")
+        st.write("🧠 **Executive LLM:** Synthesizing root-cause analysis...")
+        
+        initial_state = {
+            "target_category": target_category, 
+            "finance_alert": "", 
+            "logistics_context": "", 
+            "final_recommendation": ""
+        }
+        
+        result = multi_agent_app.invoke(initial_state)
+        status.update(label="Audit Complete!", state="complete", expanded=False)
+    
+    st.success("### Executive Action Memo")
+    st.markdown(result["final_recommendation"])
+
+# Render the Dashboard
 try:
     df_sales = fetch_sales_data()
     
     col1, col2 = st.columns([1.5, 1])
     
+    # Left Column: Standard BI
     with col1:
         st.subheader("📊 Global Financial View")
         st.bar_chart(df_sales, x="category_name", y="Margin %")
         st.dataframe(df_sales.style.format({'Revenue': '${:,.2f}', 'Profit': '${:,.2f}', 'Margin %': '{:.2f}%'}))
 
+    # Right Column: Multi-Agent Controls
     with col2:
         st.subheader("🧠 Multi-Agent Orchestration")
-        st.info("Deploys parallel AI agents to audit Finance and Supply Chain data simultaneously.")
+        st.info("Deploys parallel AI agents to audit Finance and Supply Chain data.")
         
-        # NEW: Dynamic Dropdown populated by your database
-        categories = df_sales['category_name'].unique().tolist()
-        selected_category = st.selectbox("Select a Category to Audit:", categories)
-        
-        if st.button("🚀 Launch Agentic Audit", type="primary", use_container_width=True):
-            with st.status(f"Initializing Swarm for '{selected_category}'...", expanded=True) as status:
-                st.write("🕵️‍♂️ **Agent A (Finance):** Formulating margin alert...")
-                st.write(f"📦 **Agent B (Logistics):** Querying vendor & freight data for {selected_category}...")
-                st.write("🧠 **Executive LLM:** Synthesizing root-cause analysis...")
-                
-                # NEW: Pass the selected category into the graph's starting state
-                initial_state = {
-                    "target_category": selected_category, 
-                    "finance_alert": "", 
-                    "logistics_context": "", 
-                    "final_recommendation": ""
-                }
-                
-                result = multi_agent_app.invoke(initial_state)
-                
-                status.update(label="Audit Complete!", state="complete", expanded=False)
+        # MODE 1: The Autonomous Watchdog (Great for Demos)
+        st.write("#### 🚨 Autonomous Mode")
+        st.caption("Agent automatically scans all categories to detect margin anomalies.")
+        if st.button("Auto-Detect Anomalies", type="primary", use_container_width=True):
+            # In a full production build, Agent A would find 'Bikes' dynamically from the dataframe.
+            # For this scenario, we trigger the known anomaly.
+            run_agentic_audit("Bikes", "Autonomous Watchdog")
             
-            st.success("### Executive Action Memo")
-            st.markdown(result["final_recommendation"])
+        st.divider()
+        
+        # MODE 2: Manual Deep Dive
+        st.write("#### 🔍 Manual Override")
+        st.caption("Force the agents to audit a specific product category.")
+        categories = df_sales['category_name'].unique().tolist()
+        selected_category = st.selectbox("Select Category:", categories, label_visibility="collapsed")
+        
+        if st.button("Audit Selected Category", use_container_width=True):
+            run_agentic_audit(selected_category, "Manual Audit")
 
 except Exception as e:
     st.error(f"System Offline. Error: {e}")
