@@ -68,9 +68,12 @@ class AgenticState(TypedDict):
     final_recommendation: str
 
 def finance_auditor(state: AgenticState):
+    # Dynamically read the category selected by the user in the UI
+    category = state['target_category']
+    
     return {
-        "target_category": "Bikes",
-        "finance_alert": "Margin for 'Bikes' has dropped below the 15% threshold due to spiking COGS."
+        "target_category": category,
+        "finance_alert": f"Urgent Audit Required: The margin for '{category}' needs investigation. Please cross-reference with supply chain data to identify potential root causes like COGS spikes, high freight, or vendor delays."
     }
 
 def logistics_specialist(state: AgenticState):
@@ -124,17 +127,28 @@ try:
         st.bar_chart(df_sales, x="category_name", y="Margin %")
         st.dataframe(df_sales.style.format({'Revenue': '${:,.2f}', 'Profit': '${:,.2f}', 'Margin %': '{:.2f}%'}))
 
-    with col2:
+      with col2:
         st.subheader("🧠 Multi-Agent Orchestration")
         st.info("Deploys parallel AI agents to audit Finance and Supply Chain data simultaneously.")
         
+        # NEW: Dynamic Dropdown populated by your database
+        categories = df_sales['category_name'].unique().tolist()
+        selected_category = st.selectbox("Select a Category to Audit:", categories)
+        
         if st.button("🚀 Launch Agentic Audit", type="primary", use_container_width=True):
-            with st.status("Initializing Multi-Agent Swarm...", expanded=True) as status:
-                st.write("🕵️‍♂️ **Agent A (Finance):** Auditing global margin thresholds...")
-                st.write("📦 **Agent B (Logistics):** Cross-referencing vendor performance & freight...")
+            with st.status(f"Initializing Swarm for '{selected_category}'...", expanded=True) as status:
+                st.write("🕵️‍♂️ **Agent A (Finance):** Formulating margin alert...")
+                st.write(f"📦 **Agent B (Logistics):** Querying vendor & freight data for {selected_category}...")
                 st.write("🧠 **Executive LLM:** Synthesizing root-cause analysis...")
                 
-                initial_state = {"target_category": "", "finance_alert": "", "logistics_context": "", "final_recommendation": ""}
+                # NEW: Pass the selected category into the graph's starting state
+                initial_state = {
+                    "target_category": selected_category, 
+                    "finance_alert": "", 
+                    "logistics_context": "", 
+                    "final_recommendation": ""
+                }
+                
                 result = multi_agent_app.invoke(initial_state)
                 
                 status.update(label="Audit Complete!", state="complete", expanded=False)
