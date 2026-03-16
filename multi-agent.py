@@ -1,3 +1,4 @@
+%%writefile app.py
 import streamlit as st
 import pandas as pd
 import pyodbc
@@ -48,11 +49,25 @@ conn_str = (
 )
 
 # --- 4. DATA FETCHING (For the UI) ---
+@st.cache_data(ttl=10) # Set a low Time-To-Live so it updates frequently
+def fetch_vision_alerts():
+    query = """
+        SELECT TOP 3 audit_timestamp, image_name, executive_memo 
+        FROM visual_audit_logs 
+        ORDER BY audit_timestamp DESC
+    """
+    try:
+        with pyodbc.connect(conn_str) as conn:
+            return pd.read_sql(query, conn)
+    except Exception:
+        # Returns an empty dataframe if the table doesn't exist yet
+        return pd.DataFrame()
+
 @st.cache_data(ttl=300)
 def fetch_sales_data():
     query = """
-        SELECT category_name, SUM(gross_revenue) as Revenue, SUM(gross_profit) as Profit 
-        FROM dbt_dadlakha.fct_sales_performance 
+        SELECT category_name, SUM(gross_revenue) as Revenue, SUM(gross_profit) as Profit
+        FROM dbt_dadlakha.fct_sales_performance
         GROUP BY category_name
     """
     with pyodbc.connect(conn_str) as conn:
@@ -70,7 +85,7 @@ class AgenticState(TypedDict):
 def finance_auditor(state: AgenticState):
     # Dynamically read the category selected by the user in the UI
     category = state['target_category']
-    
+
     return {
         "target_category": category,
         "finance_alert": f"Urgent Audit Required: The margin for '{category}' needs investigation. Please cross-reference with supply chain data to identify potential root causes like COGS spikes, high freight, or vendor delays."
@@ -96,8 +111,8 @@ def executive_synthesizer(state: AgenticState):
         """You are the Lead GenBI AI. Review the findings from your specialized agents:
         Finance Report: {finance_alert}
         Logistics Data: {logistics_context}
-        
-        Draft a concise, 3-bullet-point executive summary connecting the financial drop 
+
+        Draft a concise, 3-bullet-point executive summary connecting the financial drop
         to the supply chain data, and recommend an immediate business action."""
     )
     chain = prompt | llm
@@ -124,26 +139,37 @@ def run_agentic_audit(target_category, mode_name):
         st.write("🕵️‍♂️ **Agent A (Finance):** Scanning margins and formulating alert...")
         st.write(f"📦 **Agent B (Logistics):** Querying vendor & freight data for {target_category}...")
         st.write("🧠 **Executive LLM:** Synthesizing root-cause analysis...")
-        
+
         initial_state = {
-            "target_category": target_category, 
-            "finance_alert": "", 
-            "logistics_context": "", 
+            "target_category": target_category,
+            "finance_alert": "",
+            "logistics_context": "",
             "final_recommendation": ""
         }
-        
+
         result = multi_agent_app.invoke(initial_state)
         status.update(label="Audit Complete!", state="complete", expanded=False)
-    
+
     st.success("### Executive Action Memo")
     st.markdown(result["final_recommendation"])
 
 # Render the Dashboard
 try:
+
+  # --- NEW: Live Vision Alerts Feed ---
+df_alerts = fetch_vision_alerts()
+
+if not df_alerts.empty:
+    st.error("🚨 **LIVE WAREHOUSE ALERTS (Agent C - Vision)**")
+    for index, row in df_alerts.iterrows():
+        with st.expander(f"📷 Alert generated at {row['audit_timestamp']} for {row['image_name']}"):
+            st.markdown(row['executive_memo'])
+    st.markdown("---")
+
     df_sales = fetch_sales_data()
-    
+
     col1, col2 = st.columns([1.5, 1])
-    
+
     # Left Column: Standard BI
     with col1:
         st.subheader("📊 Global Financial View")
@@ -154,7 +180,7 @@ try:
     with col2:
         st.subheader("🧠 Multi-Agent Orchestration")
         st.info("Deploys parallel AI agents to audit Finance and Supply Chain data.")
-        
+
         # MODE 1: The Autonomous Watchdog (Great for Demos)
         st.write("#### 🚨 Autonomous Mode")
         st.caption("Agent automatically scans all categories to detect margin anomalies.")
@@ -162,15 +188,15 @@ try:
             # In a full production build, Agent A would find 'Bikes' dynamically from the dataframe.
             # For this scenario, we trigger the known anomaly.
             run_agentic_audit("Bikes", "Autonomous Watchdog")
-            
+
         st.divider()
-        
+
         # MODE 2: Manual Deep Dive
         st.write("#### 🔍 Manual Override")
         st.caption("Force the agents to audit a specific product category.")
         categories = df_sales['category_name'].unique().tolist()
         selected_category = st.selectbox("Select Category:", categories, label_visibility="collapsed")
-        
+
         if st.button("Audit Selected Category", use_container_width=True):
             run_agentic_audit(selected_category, "Manual Audit")
 
