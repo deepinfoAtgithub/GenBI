@@ -156,14 +156,14 @@ def run_agentic_audit(target_category, mode_name):
 try:
 
   # --- NEW: Live Vision Alerts Feed ---
-df_alerts = fetch_vision_alerts()
+    df_alerts = fetch_vision_alerts()
 
-if not df_alerts.empty:
-    st.error("🚨 **LIVE WAREHOUSE ALERTS (Agent C - Vision)**")
-    for index, row in df_alerts.iterrows():
-        with st.expander(f"📷 Alert generated at {row['audit_timestamp']} for {row['image_name']}"):
-            st.markdown(row['executive_memo'])
-    st.markdown("---")
+    if not df_alerts.empty:
+        st.error("🚨 **LIVE WAREHOUSE ALERTS (Agent C - Vision)**")
+        for index, row in df_alerts.iterrows():
+            with st.expander(f"📷 Alert generated at {row['audit_timestamp']} for {row['image_name']}"):
+                st.markdown(row['executive_memo'])
+        st.markdown("---")
 
     df_sales = fetch_sales_data()
 
